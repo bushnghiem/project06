@@ -54,7 +54,8 @@ AGravBot::AGravBot()
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
 	Acceleration = 1000.0f; // Set a default acceleration
 	FrictionCoefficient = 500.0f; // Set a default friction
-	isSpinning = false;
+	BrakingAmplifier = 100.0f; // Set a default brake amplifier
+	isBraking = false;
 }
 
 FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime)
@@ -75,7 +76,7 @@ FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float Del
 	}
 
 	// Reduce the magnitude by the friction coefficient
-	float NewMagnitude = Magnitude - (FrictionCoefficient * DeltaTime);
+	float NewMagnitude = Magnitude - (Friction * DeltaTime);
 
 	// Ensure the magnitude doesn't go below zero (i.e., no reverse velocity)
 	if (NewMagnitude < 0.0f)
@@ -99,35 +100,35 @@ FVector AGravBot::GetCurrentVelocity() const
 	return CurrentVelocity;
 }
 
-bool AGravBot::GetIsSpinning() const
+bool AGravBot::GetIsBraking() const
 {
-	return false;
+	return isBraking;
 }
 
 // Called every frame
 void AGravBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (GetCharacterMovement()->IsMovingOnGround()) {
+	if (GetCharacterMovement()->IsMovingOnGround() and !isBraking) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
 		CurrentVelocity = NewVelocity;
+	}
+	else if (GetCharacterMovement()->IsMovingOnGround() and isBraking) {
+		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient * BrakingAmplifier, DeltaTime);
+		CurrentVelocity = NewVelocity;
+		FString SpeedString = FString::Printf(TEXT("Braking"));
+		FColor TextColor = FColor::Green;  // Text color can be any color
+		float DisplayTime = 5.0f;  // Time in seconds the message will stay on screen
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, DisplayTime, TextColor, SpeedString);
+		}
 	}
 	CurrentDirectionVector = CurrentVelocity;
 	CurrentDirectionVector.Normalize();
 	CurrentSpeed = CurrentVelocity.Size();
 	GetCharacterMovement()->MaxWalkSpeed = CurrentSpeed;
 	AddMovementInput(CurrentDirectionVector, CurrentSpeed);
-
-	
-
-	FString SpeedString = FString::Printf(TEXT("Speed: %.1f units/sec"), GetCharacterMovement()->MaxWalkSpeed);
-	FColor TextColor = FColor::Green;  // Text color can be any color
-	float DisplayTime = 5.0f;  // Time in seconds the message will stay on screen
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, DisplayTime, TextColor, SpeedString);
-	}
-
 }
 
 
@@ -137,9 +138,16 @@ void AGravBot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 
+		// Flipping
+		EnhancedInputComponent->BindAction(FlipAction, ETriggerEvent::Started, this, &AGravBot::DoFlip);
+
+		// Braking
+		EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Started, this, &AGravBot::DoBrakeStart);
+		EnhancedInputComponent->BindAction(BrakeAction, ETriggerEvent::Completed, this, &AGravBot::DoBrakeEnd);
+
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AGravBot::DoJumpStart);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AGravBot::DoJumpEnd);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGravBot::Move);
@@ -214,5 +222,21 @@ void AGravBot::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void AGravBot::DoBrakeStart()
+{
+	isBraking = true;
+}
+
+void AGravBot::DoBrakeEnd()
+{
+	isBraking = false;
+}
+
+void AGravBot::DoFlip()
+{
+	FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
+	GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
 }
 

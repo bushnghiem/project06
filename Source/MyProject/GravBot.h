@@ -26,6 +26,14 @@ class MYPROJECT_API AGravBot : public ACharacter
 
 protected:
 
+	/** Break Input Action */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* FlipAction;
+
+	/** Break Input Action */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* BrakeAction;
+
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* JumpAction;
@@ -62,9 +70,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float FrictionCoefficient;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float BrakingAmplifier;
+
 	FVector ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime);
 
-	bool isSpinning;
+	bool isBraking;
 
 protected:
 	// Called when the game starts or when spawned
@@ -78,7 +89,7 @@ public:
 
 	// Example function to get isSpinning
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-	bool GetIsSpinning() const;
+	bool GetIsBraking() const;
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -111,6 +122,18 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpEnd();
+
+	/** Handles break pressed inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	virtual void DoBrakeStart();
+
+	/** Handles break pressed inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	virtual void DoBrakeEnd();
+
+	/** Handles break pressed inputs from either controls or UI interfaces */
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	virtual void DoFlip();
 
 public:
 
