@@ -108,8 +108,10 @@ bool AGravBot::GetIsSpinning() const
 void AGravBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
-	CurrentVelocity = NewVelocity;
+	if (GetCharacterMovement()->IsMovingOnGround()) {
+		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
+		CurrentVelocity = NewVelocity;
+	}
 	CurrentDirectionVector = CurrentVelocity;
 	CurrentDirectionVector.Normalize();
 	CurrentSpeed = CurrentVelocity.Size();
