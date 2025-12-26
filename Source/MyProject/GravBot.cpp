@@ -17,14 +17,12 @@
 // Sets default values
 AGravBot::AGravBot()
 {
+	//Default Code from MyProjectCharacter
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
-	// Configure character movement
-	//GetCharacterMovement()->bOrientRotationToMovement = true;
-	//GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
@@ -48,6 +46,7 @@ AGravBot::AGravBot()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
+	// Set the default values for new custom movement variables
 	CurrentVelocity = FVector(0.0f, 0.0f, 0.0f); // Set velocity to 0
 	CurrentDirectionVector = FVector(0.0f, 0.0f, 0.0f); // Set direction to 0
 	CurrentSpeed = 0.0f; // Set a speed to 0
@@ -55,9 +54,11 @@ AGravBot::AGravBot()
 	Acceleration = 1000.0f; // Set a default acceleration
 	FrictionCoefficient = 500.0f; // Set a default friction
 	BrakingAmplifier = 100.0f; // Set a default brake amplifier
+	WallBounceFactor = 0.5f; // Set a default wall bounce factor
 	isBraking = false;
 }
 
+// Custom Friction function 
 FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime)
 {
 	// Ensure friction factor is positive
@@ -66,7 +67,6 @@ FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float Del
 		Friction = 0.0f;
 	}
 
-	// Get the magnitude (length) of the vector
 	float Magnitude = Value.Size();
 
 	// If the magnitude is zero, no need to apply friction (it's already stopped)
@@ -94,10 +94,45 @@ void AGravBot::BeginPlay()
 	Super::BeginPlay();
 	
 }
-
+// Getter and setter for CurrentVelocity
 FVector AGravBot::GetCurrentVelocity() const
 {
 	return CurrentVelocity;
+}
+
+void AGravBot::SetCurrentVelocity(FVector NewVector)
+{
+	CurrentVelocity = NewVector;
+}
+// Function that realigns velocity to camera direction, used for when player switches gravity direction by jumping on wall
+void AGravBot::RealignMovement()
+{
+	// Get the control rotation, which includes pitch, yaw, and roll
+	const FRotator Rotation = GetController()->GetControlRotation();
+
+	// Get the forward direction based on the full rotation (including pitch)
+	const FVector NewDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
+
+	CurrentVelocity = NewDirection * CurrentSpeed;
+}
+
+float AGravBot::GetWallBounceFactor() const
+{
+	return WallBounceFactor;
+}
+
+void AGravBot::WallBounce(float factor)
+{
+	// Ensure bounce factor is positive
+	if (factor < 0.0f)
+	{
+		factor = 0.0f;
+	}
+
+	//Reverse direction
+	const FVector NewDirection = CurrentDirectionVector * -1;
+	//Set velocity in reverse direction with speed dependent in bounce factor
+	CurrentVelocity = NewDirection * CurrentSpeed * factor;
 }
 
 bool AGravBot::GetIsBraking() const
@@ -109,6 +144,7 @@ bool AGravBot::GetIsBraking() const
 void AGravBot::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	// Applies friction is on ground and braking amplifier if brake is pressed
 	if (GetCharacterMovement()->IsMovingOnGround() and !isBraking) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
 		CurrentVelocity = NewVelocity;
@@ -117,13 +153,14 @@ void AGravBot::Tick(float DeltaTime)
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient * BrakingAmplifier, DeltaTime);
 		CurrentVelocity = NewVelocity;
 		FString SpeedString = FString::Printf(TEXT("Braking"));
-		FColor TextColor = FColor::Green;  // Text color can be any color
-		float DisplayTime = 5.0f;  // Time in seconds the message will stay on screen
+		FColor TextColor = FColor::Green;
+		float DisplayTime = 5.0f;
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, DisplayTime, TextColor, SpeedString);
 		}
 	}
+	// Custom movement for the Gravbot
 	CurrentDirectionVector = CurrentVelocity;
 	CurrentDirectionVector.Normalize();
 	CurrentSpeed = CurrentVelocity.Size();
@@ -161,19 +198,19 @@ void AGravBot::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AGravBot::Move(const FInputActionValue& Value)
 {
-	// input is a Vector2D
+	// Input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	// route the input
+	// Route the input
 	DoMove(MovementVector.X, MovementVector.Y);
 }
 
 void AGravBot::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
+	// Input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
-	// route the input
+	// Route the input
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
 }
 
@@ -181,19 +218,16 @@ void AGravBot::DoMove(float Right, float Forward)
 {
 	if (GetController() != nullptr)
 	{
-		// find out which way is forward
+		// Get the control rotation, which includes pitch, yaw, and roll
 		const FRotator Rotation = GetController()->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		// Get the forward direction based on the full rotation (including pitch)
+		const FVector ForwardDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
 
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// Get the right direction based on the full rotation (including pitch)
+		const FVector RightDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::Y);
 
-		// add movement 
-		//AddMovementInput(ForwardDirection, Forward);
-		//AddMovementInput(RightDirection, Right);
+		// Add movement 
 		FVector DesiredMovement = ForwardDirection * Forward + RightDirection * Right;
 
 		// Update velocity based on the desired movement and acceleration
@@ -206,7 +240,7 @@ void AGravBot::DoLook(float Yaw, float Pitch)
 {
 	if (GetController() != nullptr)
 	{
-		// add yaw and pitch input to controller
+		// Add yaw and pitch input to controller
 		AddControllerYawInput(Yaw);
 		AddControllerPitchInput(Pitch);
 	}
@@ -214,13 +248,13 @@ void AGravBot::DoLook(float Yaw, float Pitch)
 
 void AGravBot::DoJumpStart()
 {
-	// signal the character to jump
+	// Signal the character to jump
 	Jump();
 }
 
 void AGravBot::DoJumpEnd()
 {
-	// signal the character to stop jumping
+	// Signal the character to stop jumping
 	StopJumping();
 }
 
@@ -236,6 +270,7 @@ void AGravBot::DoBrakeEnd()
 
 void AGravBot::DoFlip()
 {
+	// Reverses characters gravity direction
 	FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 	GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
 }

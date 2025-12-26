@@ -54,7 +54,7 @@ public:
 	// Sets default values for this character's properties
 	AGravBot();
 
-	// Declare FVector and float variables
+	// Declare all the movement variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector CurrentVelocity;
 
@@ -73,6 +73,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float BrakingAmplifier;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	float WallBounceFactor;
+
+	// Declare the friction function
 	FVector ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime);
 
 	bool isBraking;
@@ -83,11 +87,26 @@ protected:
 
 public:
 
-	// Example function to get CurrentVelocity
+	// Setter and getter functions to get CurrentVelocity
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	FVector GetCurrentVelocity() const;
 
-	// Example function to get isSpinning
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SetCurrentVelocity(FVector NewVector);
+
+	// Function that changes velocity direction to camera direction
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void RealignMovement();
+
+	// Getter functions to get WallBounceFactor
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	float GetWallBounceFactor() const;
+
+	// Function that reverses velocity direction 
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void WallBounce(float factor);
+
+	// Getter function to get isBraking
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool GetIsBraking() const;
 
