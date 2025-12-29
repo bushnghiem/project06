@@ -17,7 +17,7 @@
 // Sets default values
 AGravBot::AGravBot()
 {
-	//Default Code from MyProjectCharacter
+	// Default Code from MyProjectCharacter
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -152,6 +152,7 @@ void AGravBot::Tick(float DeltaTime)
 	else if (GetCharacterMovement()->IsMovingOnGround() and isBraking) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient * BrakingAmplifier, DeltaTime);
 		CurrentVelocity = NewVelocity;
+		/*
 		FString SpeedString = FString::Printf(TEXT("Braking"));
 		FColor TextColor = FColor::Green;
 		float DisplayTime = 5.0f;
@@ -159,6 +160,7 @@ void AGravBot::Tick(float DeltaTime)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, DisplayTime, TextColor, SpeedString);
 		}
+		*/
 	}
 	// Custom movement for the Gravbot
 	CurrentDirectionVector = CurrentVelocity;
@@ -221,20 +223,72 @@ void AGravBot::DoMove(float Right, float Forward)
 		// Get the control rotation, which includes pitch, yaw, and roll
 		const FRotator Rotation = GetController()->GetControlRotation();
 
-		// Get the forward direction based on the full rotation (including pitch)
-		const FVector ForwardDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
+		// Get the gravity direction and normalize it
+		const FVector GravityDirection = GetCharacterMovement()->GetGravityDirection();
+		const FVector GravityNorm = GravityDirection.GetSafeNormal();
 
-		// Get the right direction based on the full rotation (including pitch)
+		// Get the forward and right vectors from the camera
+		const FVector ForwardDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
 		const FVector RightDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::Y);
 
-		// Add movement 
-		FVector DesiredMovement = ForwardDirection * Forward + RightDirection * Right;
+		// Create Vectors for the adjusted forward/right directions relative to gravity
+		FVector AdjustedForward = FVector::ZeroVector;
+		FVector AdjustedRight = FVector::ZeroVector;
+
+		// If gravity is aligned with Z-axis, aka normal gravity
+		if (FVector::DotProduct(GravityNorm, FVector::UpVector) > 0.99f || FVector::DotProduct(GravityNorm, FVector::UpVector) < -0.99f)
+		{
+			// Don't change anything, with normal gravity following the camera works
+			AdjustedForward = ForwardDirection;
+			AdjustedRight = RightDirection;
+		}
+		else
+		{
+			// Gravity is not aligned with Z-axis, aka walking on walls where gravity is X-axis/Y-axis
+			// Create a plane perpendicular to the gravity direction
+			FVector RightPlane = FVector::CrossProduct(GravityNorm, FVector::UpVector).GetSafeNormal();
+			FVector ForwardPlane = FVector::CrossProduct(GravityNorm, RightPlane).GetSafeNormal();
+
+			// Project the camera's forward and right directions onto the gravity plane
+			AdjustedForward = FVector::VectorPlaneProject(ForwardDirection, GravityNorm);
+			AdjustedRight = FVector::VectorPlaneProject(RightDirection, GravityNorm);
+
+			// Ensure both directions are normalized after projection
+			AdjustedForward.Normalize();
+			AdjustedRight.Normalize();
+
+			// Now ensure the left/right movement aligns to the gravity plane since cameras left/right is actually X-axis/Y-axis
+			FVector GravityRight = FVector::CrossProduct(GravityNorm, AdjustedForward).GetSafeNormal();
+			AdjustedRight = GravityRight * -1;
+		}
+
+		// Calculate the desired movement vector based on input (Right and Forward)
+		FVector DesiredMovement = AdjustedForward * Forward + AdjustedRight * Right;
+
+		// Normalize the desired movement vector to ensure consistent movement speed
+		DesiredMovement = DesiredMovement.GetSafeNormal();
 
 		// Update velocity based on the desired movement and acceleration
 		CurrentVelocity += DesiredMovement * Acceleration * GetWorld()->GetDeltaSeconds();
 
+		// Optionally, debug the directions to visualize if things are working as expected
+		/*
+		if (GEngine)
+		{
+			FString DebugText = FString::Printf(TEXT("Controller Rotation: %s, Gravity: %s, Right: %s, Forward: %s"),
+				*Rotation.ToString(),
+				*GravityDirection.ToString(),
+				*AdjustedRight.ToString(),
+				*AdjustedForward.ToString());
+			GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Green, DebugText);
+		}
+		*/
 	}
 }
+
+
+
+
 
 void AGravBot::DoLook(float Yaw, float Pitch)
 {
