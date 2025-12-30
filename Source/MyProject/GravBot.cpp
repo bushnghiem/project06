@@ -262,13 +262,9 @@ void AGravBot::DoMove(float Right, float Forward)
 			AdjustedRight = GravityRight * -1;
 		}
 
-		// Calculate the desired movement vector based on input (Right and Forward)
+		// Make the character move in the desired direction
 		FVector DesiredMovement = AdjustedForward * Forward + AdjustedRight * Right;
-
-		// Normalize the desired movement vector to ensure consistent movement speed
 		DesiredMovement = DesiredMovement.GetSafeNormal();
-
-		// Update velocity based on the desired movement and acceleration
 		CurrentVelocity += DesiredMovement * Acceleration * GetWorld()->GetDeltaSeconds();
 
 		// Optionally, debug the directions to visualize if things are working as expected
