@@ -83,6 +83,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	bool FlipHack;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool TouchingFlipPad;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -118,6 +121,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void SetFlipHack(bool value);
+
+	// Setter and getter functions for TouchingFlipPad
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool GetTouchFlipPad() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SetTouchFlipPad(bool value);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

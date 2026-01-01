@@ -57,6 +57,7 @@ AGravBot::AGravBot()
 	WallBounceFactor = 0.5f;
 	isBraking = false;
 	FlipHack = false;
+	TouchingFlipPad = false;
 }
 
 // Custom Friction function 
@@ -143,6 +144,16 @@ bool AGravBot::GetFlipHack() const
 void AGravBot::SetFlipHack(bool value)
 {
 	FlipHack = value;
+}
+
+bool AGravBot::GetTouchFlipPad() const
+{
+	return TouchingFlipPad;
+}
+
+void AGravBot::SetTouchFlipPad(bool value)
+{
+	TouchingFlipPad = value;
 }
 
 // Called every frame
@@ -302,7 +313,17 @@ void AGravBot::DoLook(float Yaw, float Pitch)
 void AGravBot::DoJumpStart()
 {
 	// Signal the character to jump
-	Jump();
+	// Reverses characters gravity direction if touching Flip Pad
+	if (TouchingFlipPad)
+	{
+		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
+		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+	}
+	// Jump Normally if not touching Flip Pad
+	else
+	{
+		Jump();
+	}
 }
 
 void AGravBot::DoJumpEnd()
