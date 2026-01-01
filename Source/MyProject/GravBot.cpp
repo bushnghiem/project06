@@ -248,9 +248,9 @@ void AGravBot::DoMove(float Right, float Forward)
 			AdjustedForward = ForwardDirection;
 			AdjustedRight = RightDirection;
 		}
+		// Gravity is not aligned with Z-axis, aka walking on walls where gravity is X-axis/Y-axis
 		else
 		{
-			// Gravity is not aligned with Z-axis, aka walking on walls where gravity is X-axis/Y-axis
 			// Create a plane perpendicular to the gravity direction
 			FVector RightPlane = FVector::CrossProduct(GravityNorm, FVector::UpVector).GetSafeNormal();
 			FVector ForwardPlane = FVector::CrossProduct(GravityNorm, RightPlane).GetSafeNormal();
@@ -258,8 +258,6 @@ void AGravBot::DoMove(float Right, float Forward)
 			// Project the camera's forward and right directions onto the gravity plane
 			AdjustedForward = FVector::VectorPlaneProject(ForwardDirection, GravityNorm);
 			AdjustedRight = FVector::VectorPlaneProject(RightDirection, GravityNorm);
-
-			// Ensure both directions are normalized after projection
 			AdjustedForward.Normalize();
 			AdjustedRight.Normalize();
 
