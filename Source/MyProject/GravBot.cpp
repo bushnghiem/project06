@@ -47,21 +47,21 @@ AGravBot::AGravBot()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
 	// Set the default values for new custom movement variables
-	CurrentVelocity = FVector(0.0f, 0.0f, 0.0f); // Set velocity to 0
-	CurrentDirectionVector = FVector(0.0f, 0.0f, 0.0f); // Set direction to 0
-	CurrentSpeed = 0.0f; // Set a speed to 0
+	CurrentVelocity = FVector(0.0f, 0.0f, 0.0f);
+	CurrentDirectionVector = FVector(0.0f, 0.0f, 0.0f);
+	CurrentSpeed = 0.0f;
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
-	Acceleration = 1000.0f; // Set a default acceleration
-	FrictionCoefficient = 500.0f; // Set a default friction
-	BrakingAmplifier = 100.0f; // Set a default brake amplifier
-	WallBounceFactor = 0.5f; // Set a default wall bounce factor
+	Acceleration = 1000.0f;
+	FrictionCoefficient = 500.0f;
+	BrakingAmplifier = 100.0f;
+	WallBounceFactor = 0.5f;
 	isBraking = false;
+	FlipHack = false;
 }
 
 // Custom Friction function 
 FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime)
 {
-	// Ensure friction factor is positive
 	if (Friction < 0.0f)
 	{
 		Friction = 0.0f;
@@ -69,7 +69,6 @@ FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float Del
 
 	float Magnitude = Value.Size();
 
-	// If the magnitude is zero, no need to apply friction (it's already stopped)
 	if (Magnitude == 0.0f)
 	{
 		return Value;
@@ -84,8 +83,7 @@ FVector AGravBot::ApplyFrictionToVector(FVector Value, float Friction, float Del
 		NewMagnitude = 0.0f;
 	}
 
-	// Return the vector with the new magnitude, maintaining the direction
-	return Value.GetSafeNormal() * NewMagnitude;  // Scales the vector to the reduced magnitude
+	return Value.GetSafeNormal() * NewMagnitude;
 }
 
 // Called when the game starts or when spawned
@@ -107,7 +105,6 @@ void AGravBot::SetCurrentVelocity(FVector NewVector)
 // Function that realigns velocity to camera direction, used for when player switches gravity direction by jumping on wall
 void AGravBot::RealignMovement()
 {
-	// Get the control rotation, which includes pitch, yaw, and roll
 	const FRotator Rotation = GetController()->GetControlRotation();
 
 	// Get the forward direction based on the full rotation (including pitch)
@@ -123,7 +120,6 @@ float AGravBot::GetWallBounceFactor() const
 
 void AGravBot::WallBounce(float factor)
 {
-	// Ensure bounce factor is positive
 	if (factor < 0.0f)
 	{
 		factor = 0.0f;
@@ -131,13 +127,22 @@ void AGravBot::WallBounce(float factor)
 
 	//Reverse direction
 	const FVector NewDirection = CurrentDirectionVector * -1;
-	//Set velocity in reverse direction with speed dependent in bounce factor
 	CurrentVelocity = NewDirection * CurrentSpeed * factor;
 }
 
 bool AGravBot::GetIsBraking() const
 {
 	return isBraking;
+}
+
+bool AGravBot::GetFlipHack() const
+{
+	return FlipHack;
+}
+
+void AGravBot::SetFlipHack(bool value)
+{
+	FlipHack = value;
 }
 
 // Called every frame
@@ -216,6 +221,7 @@ void AGravBot::Look(const FInputActionValue& Value)
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
 }
 
+// This is where the movement with different gravity directions and camera orientations gets done
 void AGravBot::DoMove(float Right, float Forward)
 {
 	if (GetController() != nullptr)
@@ -223,7 +229,7 @@ void AGravBot::DoMove(float Right, float Forward)
 		// Get the control rotation, which includes pitch, yaw, and roll
 		const FRotator Rotation = GetController()->GetControlRotation();
 
-		// Get the gravity direction and normalize it
+		// Get the gravity direction
 		const FVector GravityDirection = GetCharacterMovement()->GetGravityDirection();
 		const FVector GravityNorm = GravityDirection.GetSafeNormal();
 
@@ -257,7 +263,7 @@ void AGravBot::DoMove(float Right, float Forward)
 			AdjustedForward.Normalize();
 			AdjustedRight.Normalize();
 
-			// Now ensure the left/right movement aligns to the gravity plane since cameras left/right is actually X-axis/Y-axis
+			// Now ensure the left/right movement aligns to the gravity plane since cameras left/right is actually X-axis/Y-axis, not Z-axis
 			FVector GravityRight = FVector::CrossProduct(GravityNorm, AdjustedForward).GetSafeNormal();
 			AdjustedRight = GravityRight * -1;
 		}
@@ -267,7 +273,6 @@ void AGravBot::DoMove(float Right, float Forward)
 		DesiredMovement = DesiredMovement.GetSafeNormal();
 		CurrentVelocity += DesiredMovement * Acceleration * GetWorld()->GetDeltaSeconds();
 
-		// Optionally, debug the directions to visualize if things are working as expected
 		/*
 		if (GEngine)
 		{
@@ -320,8 +325,11 @@ void AGravBot::DoBrakeEnd()
 
 void AGravBot::DoFlip()
 {
-	// Reverses characters gravity direction
-	FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
-	GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+	if (FlipHack) 
+	{
+		// Reverses characters gravity direction if FlipHack is true
+		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
+		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+	}
 }
 

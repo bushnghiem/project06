@@ -80,6 +80,8 @@ public:
 	FVector ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime);
 
 	bool isBraking;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+	bool FlipHack;
 
 protected:
 	// Called when the game starts or when spawned
@@ -109,6 +111,13 @@ public:
 	// Getter function to get isBraking
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool GetIsBraking() const;
+
+	// Setter and getter functions for FlipHack
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool GetFlipHack() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SetFlipHack(bool value);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
