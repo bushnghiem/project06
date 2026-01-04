@@ -58,6 +58,7 @@ AGravBot::AGravBot()
 	isBraking = false;
 	FlipHack = false;
 	TouchingFlipPad = false;
+	Working = true;
 }
 
 // Custom Friction function 
@@ -141,6 +142,12 @@ bool AGravBot::GetFlipHack() const
 	return FlipHack;
 }
 
+void AGravBot::SetWorking(bool value)
+{
+	Working = value;
+}
+
+
 void AGravBot::SetFlipHack(bool value)
 {
 	FlipHack = value;
@@ -220,7 +227,10 @@ void AGravBot::Move(const FInputActionValue& Value)
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	// Route the input
-	DoMove(MovementVector.X, MovementVector.Y);
+	if (Working)
+	{
+		DoMove(MovementVector.X, MovementVector.Y);
+	}
 }
 
 void AGravBot::Look(const FInputActionValue& Value)
@@ -229,7 +239,10 @@ void AGravBot::Look(const FInputActionValue& Value)
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	// Route the input
-	DoLook(LookAxisVector.X, LookAxisVector.Y);
+	if (Working)
+	{
+		DoLook(LookAxisVector.X, LookAxisVector.Y);
+	}
 }
 
 // This is where the movement with different gravity directions and camera orientations gets done
@@ -314,15 +327,18 @@ void AGravBot::DoJumpStart()
 {
 	// Signal the character to jump
 	// Reverses characters gravity direction if touching Flip Pad
-	if (TouchingFlipPad)
+	if (Working)
 	{
-		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
-		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
-	}
-	// Jump Normally if not touching Flip Pad
-	else
-	{
-		Jump();
+		if (TouchingFlipPad)
+		{
+			FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
+			GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+		}
+		// Jump Normally if not touching Flip Pad
+		else
+		{
+			Jump();
+		}
 	}
 }
 
