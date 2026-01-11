@@ -22,7 +22,7 @@ AGravBot::AGravBot()
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(24.f, 96.0f);
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
