@@ -360,8 +360,9 @@ void AGravBot::DoBrakeEnd()
 
 void AGravBot::DoFlip()
 {
-	if (FlipHack) 
+	if (FlipHack && GetCharacterMovement()->IsMovingOnGround())
 	{
+		
 		// Reverses characters gravity direction if FlipHack is true
 		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
