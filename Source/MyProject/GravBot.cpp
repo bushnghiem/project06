@@ -147,6 +147,16 @@ void AGravBot::SetWorking(bool value)
 	Working = value;
 }
 
+int AGravBot::GetJumpCount() const
+{
+	return JumpCounter;
+}
+
+int AGravBot::GetFlipCount() const
+{
+	return FlipCounter;
+}
+
 
 void AGravBot::SetFlipHack(bool value)
 {
@@ -333,10 +343,15 @@ void AGravBot::DoJumpStart()
 		{
 			FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 			GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+			FlipCounter++;
 		}
 		// Jump Normally if not touching Flip Pad
 		else
 		{
+			if (CanJump())
+			{
+				JumpCounter++;
+			}
 			Jump();
 		}
 	}
@@ -366,6 +381,7 @@ void AGravBot::DoFlip()
 		// Reverses characters gravity direction if FlipHack is true
 		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
+		FlipCounter++;
 	}
 }
 

@@ -89,6 +89,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	bool Working;
 
+	int JumpCounter = 0;
+	int FlipCounter = 0;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -106,7 +110,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void RealignMovement();
 
-	// Getter functions to get WallBounceFactor
+	// Getter function to get WallBounceFactor
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	float GetWallBounceFactor() const;
 
@@ -134,6 +138,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void SetWorking(bool value);
+	
+	// getter functions for counters
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	int GetJumpCount() const;
+
+	
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	int GetFlipCount() const;
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
