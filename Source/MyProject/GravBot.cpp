@@ -175,6 +175,11 @@ void AGravBot::SetTouchFlipPad(bool value)
 	TouchingFlipPad = value;
 }
 
+bool AGravBot::GetWorking() const
+{
+	return Working;
+}
+
 // Called every frame
 void AGravBot::Tick(float DeltaTime)
 {
@@ -352,6 +357,14 @@ void AGravBot::DoJumpStart()
 	{
 		if (TouchingFlipPad)
 		{
+			if (FlipSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					FlipSound,
+					GetActorLocation()
+				);
+			}
 			FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 			GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
 			FlipCounter++;
@@ -394,7 +407,7 @@ void AGravBot::DoBrakeEnd()
 
 void AGravBot::DoFlip()
 {
-	if (FlipHack && GetCharacterMovement()->IsMovingOnGround())
+	if (FlipHack && GetCharacterMovement()->IsMovingOnGround() && Working)
 	{
 		if (FlipSound)
 		{

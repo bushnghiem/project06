@@ -148,6 +148,9 @@ public:
 	void SetTouchFlipPad(bool value);
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool GetWorking() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void SetWorking(bool value);
 	
 	// getter functions for counters
