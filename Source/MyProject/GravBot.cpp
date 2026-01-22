@@ -13,6 +13,8 @@
 #include "InputActionValue.h"
 #include "MyProject.h"
 #include "Engine/Engine.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 AGravBot::AGravBot()
@@ -53,8 +55,8 @@ AGravBot::AGravBot()
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
 	Acceleration = 1000.0f;
 	FrictionCoefficient = 500.0f;
-	BrakingAmplifier = 100.0f;
-	WallBounceFactor = 0.5f;
+	BrakingAmplifier = 10.0f;
+	WallBounceFactor = 0.2f;
 	isBraking = false;
 	FlipHack = false;
 	TouchingFlipPad = false;
@@ -182,9 +184,17 @@ void AGravBot::Tick(float DeltaTime)
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
 		CurrentVelocity = NewVelocity;
 	}
-	else if (GetCharacterMovement()->IsMovingOnGround() and isBraking) {
+	else if (GetCharacterMovement()->IsMovingOnGround() and isBraking and (CurrentSpeed > 0)) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient * BrakingAmplifier, DeltaTime);
 		CurrentVelocity = NewVelocity;
+		if (BrakeSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				BrakeSound,
+				GetActorLocation()
+			);
+		}
 		/*
 		FString SpeedString = FString::Printf(TEXT("Braking"));
 		FColor TextColor = FColor::Green;
@@ -304,6 +314,7 @@ void AGravBot::DoMove(float Right, float Forward)
 		FVector DesiredMovement = AdjustedForward * Forward + AdjustedRight * Right;
 		DesiredMovement = DesiredMovement.GetSafeNormal();
 		CurrentVelocity += DesiredMovement * Acceleration * GetWorld()->GetDeltaSeconds();
+		
 
 		/*
 		if (GEngine)
@@ -350,6 +361,14 @@ void AGravBot::DoJumpStart()
 		{
 			if (CanJump())
 			{
+				if (JumpSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(
+						this,
+						JumpSound,
+						GetActorLocation()
+					);
+				}
 				JumpCounter++;
 			}
 			Jump();
@@ -377,7 +396,14 @@ void AGravBot::DoFlip()
 {
 	if (FlipHack && GetCharacterMovement()->IsMovingOnGround())
 	{
-		
+		if (FlipSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				FlipSound,
+				GetActorLocation()
+			);
+		}
 		// Reverses characters gravity direction if FlipHack is true
 		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);

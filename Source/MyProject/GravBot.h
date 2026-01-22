@@ -54,10 +54,21 @@ public:
 	// Sets default values for this character's properties
 	AGravBot();
 
+	// Declare Sound Cues for sound fx
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundCue* JumpSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundCue* FlipSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Audio")
+	USoundCue* BrakeSound;
+
+
 	// Declare all the movement variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector CurrentVelocity;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector CurrentDirectionVector;
 
