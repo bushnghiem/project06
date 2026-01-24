@@ -139,6 +139,11 @@ bool AGravBot::GetIsBraking() const
 	return isBraking;
 }
 
+bool AGravBot::GetCurrentlyBraking() const
+{
+	return currentlyBraking;
+}
+
 bool AGravBot::GetFlipHack() const
 {
 	return FlipHack;
@@ -188,10 +193,12 @@ void AGravBot::Tick(float DeltaTime)
 	if (GetCharacterMovement()->IsMovingOnGround() and !isBraking) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient, DeltaTime);
 		CurrentVelocity = NewVelocity;
+		currentlyBraking = false;
 	}
 	else if (GetCharacterMovement()->IsMovingOnGround() and isBraking and (CurrentSpeed > 0)) {
 		FVector NewVelocity = ApplyFrictionToVector(CurrentVelocity, FrictionCoefficient * BrakingAmplifier, DeltaTime);
 		CurrentVelocity = NewVelocity;
+		currentlyBraking = true;
 		if (BrakeSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(
@@ -211,6 +218,7 @@ void AGravBot::Tick(float DeltaTime)
 		*/
 	}
 	// Custom movement for the Gravbot
+
 	CurrentDirectionVector = CurrentVelocity;
 	CurrentDirectionVector.Normalize();
 	CurrentSpeed = CurrentVelocity.Size();
@@ -368,6 +376,7 @@ void AGravBot::DoJumpStart()
 			FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 			GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
 			FlipCounter++;
+			currentlyBraking = false;
 		}
 		// Jump Normally if not touching Flip Pad
 		else
@@ -383,6 +392,7 @@ void AGravBot::DoJumpStart()
 					);
 				}
 				JumpCounter++;
+				currentlyBraking = false;
 			}
 			Jump();
 		}
@@ -421,6 +431,7 @@ void AGravBot::DoFlip()
 		FVector CurrentGravity = GetCharacterMovement()->GetGravityDirection();
 		GetCharacterMovement()->SetGravityDirection(CurrentGravity * -1);
 		FlipCounter++;
+		currentlyBraking = false;
 	}
 }
 

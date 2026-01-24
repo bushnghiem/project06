@@ -91,6 +91,7 @@ public:
 	FVector ApplyFrictionToVector(FVector Value, float Friction, float DeltaTime);
 
 	bool isBraking;
+	bool currentlyBraking = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	bool FlipHack;
 
@@ -132,6 +133,10 @@ public:
 	// Getter function to get isBraking
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	bool GetIsBraking() const;
+
+	// Getter function to get currentlyBraking
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	bool GetCurrentlyBraking() const;
 
 	// Setter and getter functions for FlipHack
 	UFUNCTION(BlueprintCallable, Category = "Movement")
