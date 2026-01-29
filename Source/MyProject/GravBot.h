@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Sound/SoundCue.h"
 #include "GameFramework/Character.h"
 #include "GravBot.generated.h"
 
